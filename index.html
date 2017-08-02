@@ -18,7 +18,14 @@
         color: #fff;
         padding: 1em;
       }
-      .hollidays {
+      .proximo-feriado > p {
+        background-color: #f00;
+        color: #fff;
+        padding: 1em;
+      }
+      .hollidays,
+      .proximo-feriado,
+      .api {
         width: 30em;
         margin: 2em auto;
         padding: 0;
@@ -74,6 +81,10 @@
 
     <div id="app">
       <header>{{ title }}</header>
+      <div class="proximo-feriado">
+        <h2>Próximo Feriado:</h2>
+        <p>{{ nextHolliday() }}</p>
+      </div>
       <ul class="hollidays">
         <li v-for="day in hollidays" v-if="day.date.split('-')[0] == 2017">
           <date>
@@ -88,6 +99,7 @@
           </div>
         </li>
       </ul>
+      <p class="api"><a href="https://feriados-cl-api.herokuapp.com/feriados">API</a></p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.4.2/vue.min.js"></script>
@@ -97,7 +109,7 @@
       var app = new Vue({
         el : "#app",
         data : {
-          title: "Feriado en Chile - 2017 VueJS",
+          title: "Feriado en Chile 2017 - VueJS",
           hollidays: [],
           errors: []
         },
@@ -114,11 +126,57 @@
           getWeekDay: function (date, day) {
             var nDate = new Date(date + 'T00:00:00-03:00');
             return this.humanizeDay(nDate.getDay());
+          },
+          days_diff: function(now, date) {
+            var date1 = new Date(date + 'T00:00:00-03:00');
+            var date2 = new Date(now + 'T00:00:00-03:00');
+            var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+            var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            return diffDays;
+          },
+          nextHolliday: function(){
+            var today = new Date([
+              new Date().getFullYear(),
+              ('0' + (new Date().getMonth() + 1)).slice(-2),
+              ('0' + (new Date().getDate())).slice(-2)
+            ].join('-') + 'T00:00:00-03:00');
+            var ok = false;
+            for (var i = 0; i < this.hollidays.length; i++) {
+
+              var date          = new Date(this.hollidays[i].date + 'T00:00:00-03:00');
+              var humanDate     = this.hollidays[i].date.split('-');
+              var humanDay      = humanDate[2].replace(/^0+/, '');
+              var humanMonth    = humanDate[1];
+              var humanWeekDay  = this.humanizeDay(date.getDay());
+              var message       = this.hollidays[i].title + " (" + this.hollidays[i].extra.toLowerCase() + ")";
+              var castMessage   = '';
+
+              if (ok == false && date.getTime() >= today.getTime()) {
+                ok = true;
+
+                var dias = this.days_diff([
+                  today.getFullYear(),
+                  ('0' + (today.getMonth() + 1)).slice(-2),
+                  ('0' + (today.getDate())).slice(-2)
+                ].join('-'), this.hollidays[i].date);
+
+                if (dias == 0) {
+                  castMessage = '¡*HOY* es feriado! Se celebra: ' + message + '. ¡Disfrútalo!';
+                } else {
+                  castMessage = "El próximo feriado es el " + humanWeekDay + " " + humanDay + " de " + this.humanizeMonth(humanMonth) + ", quedan " + dias + " días. Se celebra: " + message + ".";
+                }
+
+                return castMessage;
+
+              }
+            }
+
           }
         },
         created: function() {
           axios.get('https://feriados-cl-api.herokuapp.com/feriados').then(response => {
             this.hollidays = response.data;
+            this.nextHolliday();
           }).catch(e => {
             this.errors.push(e)
           });
