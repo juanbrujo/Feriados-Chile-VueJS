@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title></title>
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 1em;
+        color: #333;
+        margin: 0;
+      }
+      header {
+        text-align: center;
+        background-color: #f00;
+        color: #fff;
+        padding: 1em;
+      }
+      .hollidays {
+        width: 30em;
+        margin: 2em auto;
+        padding: 0;
+      }
+      .hollidays li {
+        list-style: none;
+        background-color: #eee;
+        box-shadow: 0 0 2px rgba(0,0,0,.2);
+        margin-bottom: 1em;
+        height: 6em;
+      }
+      .hollidays li date {
+        float: left;
+        width: 6em;
+        height: 6em;
+        outline: 1px solid #fff;
+      }
+      .hollidays li date span {
+        display: block;
+        text-align: center;
+      }
+      .hollidays li date .month {
+        background-color: #f00;
+        color: #fff;
+      }
+      .hollidays li date .day {
+        font-size: 2.4em;
+      }
+      .hollidays li date .year {
+        background-color: #000;
+        color: #fff;
+      }
+      .hollidays li > div {
+        float: left;
+        width: 23em;
+        padding-left: 1em;
+      }
+      .hollidays li h2,
+      .hollidays li p {
+        margin: 0;
+      }
+      .hollidays li h2 {
+        font-size: 1em;
+        font-weight: bold;
+      }
+      .hollidays li p {
+        font-size: .9em;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="app">
+      <header>{{ title }}</header>
+      <ul class="hollidays">
+        <li v-for="day in hollidays" v-if="day.date.split('-')[0] == 2017">
+          <date>
+          <span class="month">{{ humanizeMonth(day.date.split('-')[1]) }}</span>
+            <span class="day">{{ day.date.split('-')[2] }}</span>
+            <span class="year">{{ day.date.split('-')[0] }}</span>
+          </date>
+          <div>
+            <h2>{{ day.title }}</h2>
+            <p>{{ day.extra }}</p>
+            <small>({{ getWeekDay(day.date, day.date.split('-')[2]) }})</small>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.4.2/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+
+      var app = new Vue({
+        el : "#app",
+        data : {
+          title: "Feriado en Chile - 2017 VueJS",
+          hollidays: [],
+          errors: []
+        },
+        methods: {
+          humanizeMonth: function(month) {
+            var month       = month - 1,
+                monthNames  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Sedtiembre','Octubre','Noviembre','Diciembre'];
+            return monthNames[month];
+          },
+          humanizeDay: function (day) {
+            var dayNames  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            return dayNames[day];
+          },
+          getWeekDay: function (date, day) {
+            var nDate = new Date(date + 'T00:00:00-03:00');
+            return this.humanizeDay(nDate.getDay());
+          }
+        },
+        created: function() {
+          axios.get('https://feriados-cl-api.herokuapp.com/feriados').then(response => {
+            this.hollidays = response.data;
+          }).catch(e => {
+            this.errors.push(e)
+          });
+        }
+      });
+
+    </script>
+  </body>
+</html>
